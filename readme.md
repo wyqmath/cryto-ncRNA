@@ -22,7 +22,10 @@
 
 
 
-<img src="https://github.com/JLU-WangXu/cryto-ncRNA/blob/main/pic/ncRNA.png" alt="ncRNA种类图示" width="400"/>
+
+<div align="center">
+  <img src="https://github.com/JLU-WangXu/cryto-ncRNA/blob/main/pic/ncRNA.png" alt="ncRNA图示" width="400"/>
+</div>
 
 
 
