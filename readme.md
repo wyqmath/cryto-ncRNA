@@ -40,4 +40,96 @@
 
 ```bash
 pip install pycryptodome numpy matplotlib
+```
+
+## 安装
+
+1. 克隆项目到本地：
+
+    ```bash
+    git clone https://github.com/JLU-WangXu/cryto-ncRNA.git
+    cd cryto-ncRNA
+    ```
+
+2. 安装所有必要的依赖项（如上所示）：
+
+    ```bash
+    pip install pycryptodome numpy matplotlib
+    ```
+
+3. 确保你使用的是Python 3.x版本。
+
+## 使用
+
+### 加密
+
+要进行加密，可以使用 `encrypt()` 函数，该函数接受文本或基因序列作为输入，并通过自定义加密算法返回加密后的数据。
+
+```python
+from encryption_algorithms import encrypt
+
+# 输入数据
+plaintext = "ACGTACGTACGT"
+
+# 加密数据
+encrypted_data, original_order, encryption_time = encrypt(plaintext, seed="123456789")
+
+print(f"Encrypted Data: {encrypted_data}")
+```
+## 解密
+
+要解密加密的数据，可以使用 `decrypt()` 函数，确保使用与加密时相同的动态密钥和顺序。
+
+```python
+from encryption_algorithms import decrypt
+
+# 解密数据
+decrypted_data, decryption_time = decrypt(encrypted_data, seed="123456789", original_order=original_order)
+
+print(f"Decrypted Data: {decrypted_data}")
+```
+
+### 示例
+
+可以通过 main 函数测试加密解密流程，并验证解密的准确性：
+
+```python
+
+if __name__ == "__main__":
+    plaintext = "ACGTACGTACGT"
+
+    # 加密
+    encrypted_data, original_order, encryption_time = encrypt(plaintext, seed="123456789")
+    
+    # 解密
+    decrypted_data, decryption_time = decrypt(encrypted_data, seed="123456789", original_order=original_order)
+    
+    # 准确性验证
+    if plaintext == decrypted_data:
+        accuracy = 100.0
+    else:
+        accuracy = 0.0
+    print(f"Encryption Accuracy: {accuracy}%")
+    print(f"Encryption Time: {encryption_time:.6f} seconds")
+    print(f"Decryption Time: {decryption_time:.6f} seconds")
+```
+
+##测试
+可以使用 test_algorithms.py 文件中定义的函数对不同类型的数据集（文本、基因数据）进行加密和解密测试。通过运行此脚本，你可以获得加密时间、解密时间、熵值等结果。
+
+运行以下命令启动测试：
+```python
+python test_algorithms.py
+```
+
+##结果分析
+算法的性能和准确性将在控制台输出，并包括以下信息：
+
+加密时间：表示加密过程的运行时间。
+解密时间：表示解密过程的运行时间。
+准确性：解密后数据与原始数据的匹配度。
+熵值：用于评估加密后数据的随机性。
+
+##许可证
+此项目根据MIT许可证开源，详情请参阅 LICENSE 文件。
 
