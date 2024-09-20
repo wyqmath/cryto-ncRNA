@@ -32,10 +32,118 @@
 ## 功能
 
 - **基于ncRNA的加密算法**：利用非编码RNA的特性进行加密，数据被转换为模拟的RNA序列，并通过自定义加密过程实现信息保护。
-- **动态密钥生成**：采用动态生成的密钥进行加密，密钥基于输入数据的特定属性或时间生成。
-- **冗余保护**：在加密数据中加入冗余位以增强其完整性和抗攻击性。
-- **加密与解密功能**：实现了完整的加密和解密过程，可以应用于文本、基因数据等多种数据类型。
+  ```pyhton
+  def generate_substitution_matrix(seed):
+    random.seed(seed)
+    bases = ['A', 'C', 'G', 'T']  # 碱基
+    substitution = dict()
+    shuffled_bases = random.sample(bases, len(bases))
+    for i, base in enumerate(bases):
+        substitution[base] = shuffled_bases[i]
+    return substitution
+  
+  def transcribe_dna_to_rna(plaintext, substitution_matrix):
+    transcribed = ''.join([substitution_matrix.get(char, char) for char in plaintext])
+    return transcribed
+  ```
 
+- **动态密钥生成**：采用动态生成的密钥进行加密，密钥基于输入数据的特定属性或时间生成。
+ ```pyhton
+def generate_dynamic_key(seed=None):
+    if seed is None:
+        now = datetime.datetime.now()
+        seed = int(now.strftime('%Y%m%d%H%M%S'))
+
+    seed_str = str(seed)
+    hash_object = hashlib.sha256(seed_str.encode())
+    dynamic_key = int(hash_object.hexdigest(), 16) % (2**128)
+    
+    return dynamic_key
+
+def apply_dynamic_key(data, key):
+    key_bin = format(key, '0128b')
+    data_bin = ''.join(format(ord(char), '08b') for char in data)  # 将数据转换为二进制格式
+    
+    # 使用异或操作将数据与密钥进行加密
+    encrypted_data = ''.join('1' if data_bin[i] != key_bin[i % len(key_bin)] else '0' for i in range(len(data_bin)))
+    
+    # 将二进制数据转换回字符
+    chars = [chr(int(encrypted_data[i:i+8], 2)) for i in range(0, len(encrypted_data), 8)]
+    return ''.join(chars)
+
+def reverse_dynamic_key(data, key):
+    # 和apply_dynamic_key相同，异或操作是对称的，解密时调用相同逻辑
+    return apply_dynamic_key(data, key)
+ ```
+  
+- **冗余保护**：在加密数据中加入冗余位以增强其完整性和抗攻击性。
+ ```pyhton
+  def insert_redundancy(encrypted_data):
+    redundancy = ''.join(random.choice('01') for _ in range(8))  # 8位随机冗余
+    return encrypted_data + redundancy
+ ```
+
+- **加密与解密功能**：实现了完整的加密和解密过程，可以应用于文本、基因数据等多种数据类型。
+  
+ ```pyhton
+def encrypt(plaintext, seed=None):
+    start_time = time.time()  # 开始计时
+    if seed is None:
+        seed = "initial_seed_value"
+    substitution_matrix = generate_substitution_matrix(seed)
+    
+    transcribed_data = transcribe_dna_to_rna(plaintext, substitution_matrix)
+    print(f"转录后的数据：{transcribed_data}")
+    
+    spliced_data, original_order = split_and_splice(transcribed_data)
+    print(f"剪接后的数据：{spliced_data}")
+    
+    dynamic_key = generate_dynamic_key(seed=int(seed))
+    print(f"动态密钥：{dynamic_key}")
+    
+    encrypted_data = apply_dynamic_key(spliced_data, dynamic_key)
+    print(f"应用动态密钥后的加密数据：{encrypted_data}")
+    
+    encrypted_with_redundancy = insert_redundancy(encrypted_data)
+    print(f"加密后的数据（含冗余）：{encrypted_with_redundancy}")
+    
+    end_time = time.time()  # 结束计时
+    encryption_time = end_time - start_time  # 计算加密时间
+    print(f"加密时间：{encryption_time:.6f} 秒")
+    
+    return encrypted_with_redundancy, original_order, encryption_time
+
+```
+
+```pyhton
+def decrypt(encrypted_with_redundancy, seed, original_order):
+    start_time = time.time()  # 开始计时
+    encrypted_data = encrypted_with_redundancy[:-8]  # 移除最后8位冗余数据
+    print(f"移除冗余后的数据：{encrypted_data}")
+    
+    dynamic_key = generate_dynamic_key(seed=int(seed))  # 确保解密时使用相同的密钥生成逻辑
+    print(f"动态密钥：{dynamic_key}")
+    
+    decrypted_spliced_data = reverse_dynamic_key(encrypted_data, dynamic_key)
+    print(f"使用动态密钥解密后的数据：{decrypted_spliced_data}")
+    
+    decrypted_data = inverse_splice(decrypted_spliced_data, original_order)
+    print(f"逆剪接后的数据：{decrypted_data}")
+    
+    inverse_substitution_matrix = {v: k for k, v in generate_substitution_matrix(seed).items()}
+    decrypted_data = ''.join([inverse_substitution_matrix.get(char, char) for char in decrypted_data])
+    print(f"逆转录后的解密数据：{decrypted_data}")
+    
+    end_time = time.time()  # 结束计时
+    decryption_time = end_time - start_time  # 计算解密时间
+    print(f"解密时间：{decryption_time:.6f} 秒")
+    
+    return decrypted_data, decryption_time
+
+
+
+
+```
 ## 依赖
 
 为了运行该项目，您需要以下依赖项：
