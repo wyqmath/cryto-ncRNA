@@ -19,6 +19,9 @@
 ## 背景
 
 非编码RNA（ncRNA）在生物体内具有重要的调控作用。它们不仅在基因表达的调控中发挥作用，还展示了高度复杂的序列模式。**cryto-ncRNA**项目通过模拟这些生物序列的动态行为，开发了一种独特的信息加密方式。该项目结合生物序列和现代加密算法，旨在创建一个既具有理论意义又具有实际应用价值的加密系统。
+
+
+
 <img src="https://github.com/JLU-WangXu/cryto-ncRNA/blob/main/pic/ncRNA.png" alt="ncRNA种类图示" width="400"/>
 
 
