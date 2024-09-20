@@ -32,7 +32,8 @@
 ## 功能
 
 - **基于ncRNA的加密算法**：利用非编码RNA的特性进行加密，数据被转换为模拟的RNA序列，并通过自定义加密过程实现信息保护。
-  ```pyhton
+
+  ```python
   def generate_substitution_matrix(seed):
     random.seed(seed)
     bases = ['A', 'C', 'G', 'T']  # 碱基
@@ -47,9 +48,11 @@
     return transcribed
   ```
 
+
 - **动态密钥生成**：采用动态生成的密钥进行加密，密钥基于输入数据的特定属性或时间生成。
- ```pyhton
-def generate_dynamic_key(seed=None):
+  
+ ```python
+  def generate_dynamic_key(seed=None):
     if seed is None:
         now = datetime.datetime.now()
         seed = int(now.strftime('%Y%m%d%H%M%S'))
@@ -60,7 +63,7 @@ def generate_dynamic_key(seed=None):
     
     return dynamic_key
 
-def apply_dynamic_key(data, key):
+  def apply_dynamic_key(data, key):
     key_bin = format(key, '0128b')
     data_bin = ''.join(format(ord(char), '08b') for char in data)  # 将数据转换为二进制格式
     
@@ -71,13 +74,14 @@ def apply_dynamic_key(data, key):
     chars = [chr(int(encrypted_data[i:i+8], 2)) for i in range(0, len(encrypted_data), 8)]
     return ''.join(chars)
 
-def reverse_dynamic_key(data, key):
+  def reverse_dynamic_key(data, key):
     # 和apply_dynamic_key相同，异或操作是对称的，解密时调用相同逻辑
     return apply_dynamic_key(data, key)
  ```
   
 - **冗余保护**：在加密数据中加入冗余位以增强其完整性和抗攻击性。
- ```pyhton
+  
+ ```python
   def insert_redundancy(encrypted_data):
     redundancy = ''.join(random.choice('01') for _ in range(8))  # 8位随机冗余
     return encrypted_data + redundancy
@@ -85,8 +89,8 @@ def reverse_dynamic_key(data, key):
 
 - **加密与解密功能**：实现了完整的加密和解密过程，可以应用于文本、基因数据等多种数据类型。
   
- ```pyhton
-def encrypt(plaintext, seed=None):
+ ```python
+  def encrypt(plaintext, seed=None):
     start_time = time.time()  # 开始计时
     if seed is None:
         seed = "initial_seed_value"
@@ -116,7 +120,7 @@ def encrypt(plaintext, seed=None):
 ```
 
 ```pyhton
-def decrypt(encrypted_with_redundancy, seed, original_order):
+  def decrypt(encrypted_with_redundancy, seed, original_order):
     start_time = time.time()  # 开始计时
     encrypted_data = encrypted_with_redundancy[:-8]  # 移除最后8位冗余数据
     print(f"移除冗余后的数据：{encrypted_data}")
@@ -139,11 +143,9 @@ def decrypt(encrypted_with_redundancy, seed, original_order):
     print(f"解密时间：{decryption_time:.6f} 秒")
     
     return decrypted_data, decryption_time
-
-
-
-
 ```
+
+
 ## 依赖
 
 为了运行该项目，您需要以下依赖项：
