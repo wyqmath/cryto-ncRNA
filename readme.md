@@ -33,7 +33,7 @@
 
 - **基于ncRNA的加密算法**：利用非编码RNA的特性进行加密，数据被转换为模拟的RNA序列，并通过自定义加密过程实现信息保护。
 
-  ```python
+ ```python
    def generate_substitution_matrix(seed):
     random.seed(seed)
     bases = ['A', 'C', 'G', 'T']  # 碱基
@@ -46,7 +46,7 @@
    def transcribe_dna_to_rna(plaintext, substitution_matrix):
     transcribed = ''.join([substitution_matrix.get(char, char) for char in plaintext])
     return transcribed
-  ```
+ ```
 
 
 - **动态密钥生成**：采用动态生成的密钥进行加密，密钥基于输入数据的特定属性或时间生成。
@@ -89,7 +89,7 @@
 
 - **加密与解密功能**：实现了完整的加密和解密过程，可以应用于文本、基因数据等多种数据类型。
   
- ###加密 
+ ## 加密 
  
  ```python
   def encrypt(plaintext, seed=None):
@@ -122,7 +122,7 @@
 ```
 
 
-###解密
+## 解密
 ```python
   def decrypt(encrypted_with_redundancy, seed, original_order):
     start_time = time.time()  # 开始计时
