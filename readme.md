@@ -1,6 +1,6 @@
-# cryto-ncRNA: 基于非编码RNA（ncRNA）的加密算法项目
+# crypto-ncRNA: 基于非编码RNA（ncRNA）的加密算法项目
 
-**cryto-ncRNA** 是一个利用非编码RNA（ncRNA）的生物启发式模型来实现加密算法的项目。本项目旨在通过模拟ncRNA的生物特性，研究其在信息加密、数据保护等领域的潜力。该项目通过结合现代密码学技术与生物序列处理，实现对文本、基因数据等的加密与解密。
+**crypto-ncRNA** 是一个利用非编码RNA（ncRNA）的生物启发式模型来实现加密算法的项目。本项目旨在通过模拟ncRNA的生物特性，研究其在信息加密、数据保护等领域的潜力。该项目通过结合现代密码学技术与生物序列处理，实现对文本、基因数据等的加密与解密。
 
 ## 目录
 
@@ -18,13 +18,13 @@
 
 ## 背景
 
-非编码RNA（ncRNA）在生物体内具有重要的调控作用。它们不仅在基因表达的调控中发挥作用，还展示了高度复杂的序列模式。**cryto-ncRNA**项目通过模拟这些生物序列的动态行为，开发了一种独特的信息加密方式。该项目结合生物序列和现代加密算法，旨在创建一个既具有理论意义又具有实际应用价值的加密系统。
+非编码RNA（ncRNA）在生物体内具有重要的调控作用。它们不仅在基因表达的调控中发挥作用，还展示了高度复杂的序列模式。**crypto-ncRNA**项目通过模拟这些生物序列的动态行为，开发了一种独特的信息加密方式。该项目结合生物序列和现代加密算法，旨在创建一个既具有理论意义又具有实际应用价值的加密系统。
 
 
 
 
 <div align="center">
-  <img src="https://github.com/JLU-WangXu/cryto-ncRNA/blob/main/pic/ncRNA.png" alt="ncRNA图示" width="400"/>
+  <img src="https://github.com/JLU-WangXu/crypto-ncRNA/blob/main/pic/ncRNA.png" alt="ncRNA图示" width="400"/>
 </div>
 
 
