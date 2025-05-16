@@ -1,34 +1,34 @@
-import hashlib  # 导入hashlib模块用于生成哈希值
-import random   # 导入random模块用于生成随机数
-import time     # 导入time模块用于计算时间
-from collections import Counter  # 导入Counter用于计数对象
-from Crypto.Cipher import AES  # 导入AES加密模块
-from Crypto.Util.Padding import pad, unpad  # 导入填充和去填充函数
-import base64   # 导入base64模块用于编码
-import math     # 导入math模块用于数学运算
-import matplotlib.pyplot as plt  # 导入matplotlib.pyplot用于绘图
+import hashlib  # Import hashlib module for generating hash values
+import random   # Import random module for generating random numbers
+import time     # Import time module for calculating time
+from collections import Counter  # Import Counter for counting objects
+from Crypto.Cipher import AES  # Import AES encryption module
+from Crypto.Util.Padding import pad, unpad  # Import padding and unpadding functions
+import base64   # Import base64 module for encoding
+import math     # Import math module for mathematical operations
+import matplotlib.pyplot as plt  # Import matplotlib.pyplot for plotting
 from Crypto.Protocol.KDF import PBKDF2
-from Crypto.Hash import SHA256  # 导入正确的哈希模块
+from Crypto.Hash import SHA256  # Import correct hash module
 import numpy as np
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
-from Crypto.Random import get_random_bytes  # 添加这行导入语句在文件顶部的导入区域
-from Crypto.Cipher import ChaCha20  # 导入ChaCha20加密模块
+from Crypto.Random import get_random_bytes  # Add this line to import statement in file top
+from Crypto.Cipher import ChaCha20  # Import ChaCha20 encryption module
 
-# 定义64个密码子
+# Define 64 codons
 codons = np.array([a + b + c for a in 'ACGU' for b in 'ACGU' for c in 'ACGU'])
 
-# 定义Base64字符集（不包括'='）
+# Define Base64 character set (excluding '=')
 base64_chars = np.array(list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'))
 
-# 添加 can_pair 函数在 nussinov_algorithm 函数之前
+# Add can_pair function before nussinov_algorithm function
 def can_pair(base1, base2):
-    """检查两个RNA碱基是否可以配对
-    
-    允许的碱基对: AU, UA, GC, CG, GU, UG
+    """Checks if two RNA bases can pair.
+
+    Allowed pairs: AU, UA, GC, CG, GU, UG
     """
     pairs = {
         ('A', 'U'), ('U', 'A'),
@@ -37,57 +37,57 @@ def can_pair(base1, base2):
     }
     return (base1, base2) in pairs
 
-# 1. 优化密码子生成，使用生成器而不是预计算数组
+# 1. Optimized codon generation using a generator instead of a precomputed array
 def codon_generator():
     for a in 'ACGU':
         for b in 'ACGU':
             for c in 'ACGU':
                 yield a + b + c
 
-# 2. 优化替换矩阵生成
+# 2. Optimized substitution matrix generation
 def generate_codon_substitution_matrix(seed):
     rng = random.Random(seed)
     codons_list = list(codon_generator())
     shuffled = codons_list.copy()
     rng.shuffle(shuffled)
-    # 使用更节省内存的字典推导式
+    # Uses a more memory-efficient dictionary comprehension
     return {k: v for k, v in zip(codons_list, shuffled)}
 
-# 将 process_chunk 函数移到外部
+# Move process_chunk function to outside
 def process_chunk(chunk_and_matrix):
-    """处理密码子块的辅助函数
-    
+    """Helper function to process codon chunks.
+
     Args:
-        chunk_and_matrix: 元组 (chunk, substitution_matrix)
+        chunk_and_matrix: Tuple (chunk, substitution_matrix)
     Returns:
-        list: 替换后的密码子列表
+        list: List of substituted codons.
     """
     chunk, substitution_matrix = chunk_and_matrix
     return [substitution_matrix[codon] for codon in chunk]
 
-# 修改后的 substitute_codons 函数
+# Modified substitute_codons function
 def substitute_codons(codon_sequence, substitution_matrix):
-    """使用替换矩阵替换密码子序列
-    
+    """Substitutes codons in a sequence using a substitution matrix.
+
     Args:
-        codon_sequence: 密码子序列列表
-        substitution_matrix: 替换矩阵字典
+        codon_sequence: List of codons.
+        substitution_matrix: Substitution matrix dictionary.
     Returns:
-        list: 替换后的密码子序列
+        list: List of substituted codons.
     """
     return [substitution_matrix[codon] for codon in codon_sequence]
 
-# 3. 优化 linear_fold 函数的内存使用
+# 3. Optimized memory usage for the linear_fold function
 def linear_fold(sequence):
-    """使用LinearFold算法进行RNA二级结构预测
-    
-    参数:
-        sequence: RNA序列字符串
-    返回:
-        结构: 点括号表示的结构字符串
+    """Performs RNA secondary structure prediction using the LinearFold algorithm.
+
+    Args:
+        sequence: RNA sequence string.
+    Returns:
+        str: Dot-bracket notation of the structure.
     """
     n = len(sequence)
-    # 使用列表替代numpy数组
+    # Uses lists instead of numpy arrays
     dp = [0] * n
     stack = []
     structure = ['.' for _ in range(n)]
@@ -108,73 +108,72 @@ def linear_fold(sequence):
     
     return ''.join(structure)
 
-# 定义 inverse_rna_secondary_structure 函数
+# Define inverse_rna_secondary_structure function
 def inverse_rna_secondary_structure(codon_sequence, indices_order):
-    """逆转 RNA 二级结构重排序
-    
-    参数:
-        codon_sequence: 密码子序列列表
-        indices_order: 原始重排序索引
-    返回:
-        list: 还原后的密码子序列
+    """Reverses RNA secondary structure reordering.
+
+    Args:
+        codon_sequence: List of codons.
+        indices_order: Original reordering indices.
+    Returns:
+        list: Restored codon sequence.
     """
-    # 合并为单个序列
+    # Merge into a single sequence
     sequence = ''.join(codon_sequence)
     sequence_array = np.array(list(sequence))
     
-    # 转换索引为 numpy 数组
     indices_order_array = np.array(indices_order)
     
-    # 验证长度匹配
+    # Validate length match
     if len(indices_order_array) != len(sequence_array):
-        # 如果长度不匹配，尝试调整序列长度
+        # If lengths do not match, try to adjust sequence length
         min_len = min(len(indices_order_array), len(sequence_array))
         sequence_array = sequence_array[:min_len]
         indices_order_array = indices_order_array[:min_len]
-        print(f"警告：序列长度已调整为 {min_len}")
+        print(f"Warning: Sequence length adjusted to {min_len}")
     
-    # 生成逆向索引
+    # Generate inverse indices
     inverse_order = np.argsort(indices_order_array)
     
-    # 应用逆向重排序
+    # Apply inverse reordering
     original_sequence_array = sequence_array[inverse_order]
     original_sequence = ''.join(original_sequence_array)
     
-    # 确保结果长度是3的倍数
+    # Ensure the result length is a multiple of 3
     if len(original_sequence) % 3 != 0:
         padding_length = 3 - (len(original_sequence) % 3)
         original_sequence = original_sequence + 'N' * padding_length
-        print(f"警告：添加了 {padding_length} 个填充字符以确保序列长度是3的倍数")
+        print(f"Warning: Added {padding_length} padding characters to ensure sequence length is a multiple of 3")
     
-    # 转换回密码子序列
+    # Convert back to codon sequence
     original_codon_sequence = [original_sequence[i:i+3] for i in range(0, len(original_sequence), 3)]
     
     return original_codon_sequence
 
-# 4. 优化 apply_rna_secondary_structure 函数
+# 4. Optimized apply_rna_secondary_structure function
 def apply_rna_secondary_structure(codon_sequence):
-    """应用 RNA 二级结构重排序
-    
-    参数:
-        codon_sequence: 密码子序列列表
-    返回:
-        tuple: (重排序后的密码子序列, 索引顺序)
+    """Applies RNA secondary structure reordering.
+
+    Args:
+        codon_sequence: List of codons.
+    Returns:
+        tuple: (Reordered codon sequence, index order).
     """
     base_sequence = ''.join(codon_sequence)
     structure = linear_fold(base_sequence)
     
-    # 使用列表推导式替代numpy操作
+    # Uses list comprehensions instead of numpy operations
     paired_indices = [i for i, c in enumerate(structure) if c in '()']
     unpaired_indices = [i for i, c in enumerate(structure) if c == '.']
     indices_order = paired_indices + unpaired_indices
     
-    # 使用列表操作替代numpy重排序
+    # Uses list operations instead of numpy reordering
     new_sequence = ''.join(base_sequence[i] for i in indices_order)
     new_codon_sequence = [new_sequence[i:i+3] for i in range(0, len(new_sequence), 3)]
     
     return new_codon_sequence, indices_order
 
-# 5. 从生物数据生成动态密钥
+# 5. Generate dynamic key from biological data
 def generate_dynamic_key_from_biological_data(seed_sequence, salt, iterations=100000):
     valid_bases = set('ACGU')
     if not set(seed_sequence.upper()).issubset(valid_bases):
@@ -182,7 +181,7 @@ def generate_dynamic_key_from_biological_data(seed_sequence, salt, iterations=10
     dynamic_key = PBKDF2(seed_sequence, salt, dkLen=32, count=iterations, hmac_hash_module=SHA256)
     return dynamic_key
 
-# 6. AES加密
+# 6. AES encryption
 def aes_encrypt(data_sequence, key):
     data_str = ''.join(data_sequence)
     data_bytes = data_str.encode()
@@ -190,22 +189,22 @@ def aes_encrypt(data_sequence, key):
     ciphertext, tag = cipher.encrypt_and_digest(pad(data_bytes, AES.block_size))
     return cipher.nonce + tag + ciphertext
 
-# 7. 添加校验和
+# 7. Add checksum
 def add_checksum(encrypted_data):
     checksum = hashlib.sha256(encrypted_data).digest()
     return encrypted_data + checksum
 
-# 流密码加密
+# Stream cipher encryption
 def cha_encrypt(data, key):
-    """使用 ChaCha20 加密数据
-    
+    """Encrypts data using ChaCha20.
+
     Args:
-        data: 要加密的数据（bytes 或 str）
-        key: 加密密钥
+        data: Data to encrypt (bytes or str).
+        key: Encryption key.
     Returns:
-        bytes: nonce + 加密后的数据
+        bytes: nonce + encrypted data.
     """
-    # 确保输入数据是字节类型
+    # Ensure input data is bytes type
     if isinstance(data, str):
         data_bytes = data.encode('utf-8')
     else:
@@ -215,65 +214,65 @@ def cha_encrypt(data, key):
     ciphertext = cipher.nonce + cipher.encrypt(data_bytes)
     return ciphertext
 
-# 将 inverse_substitute_codons 函数移到 decrypt 函数之前
+# Move inverse_substitute_codons function before decrypt function
 def inverse_substitute_codons(codon_sequence, substitution_matrix):
-    """逆向替换密���子，将替换后的密码子还原为原始密码子"""
+    """Reverses codon substitution, restoring substituted codons to original."""
     inverse_matrix = {v: k for k, v in substitution_matrix.items()}
     original_codon_sequence = []
     
     for i, codon in enumerate(codon_sequence):
         if codon not in inverse_matrix:
-            raise ValueError(f"无法找到密码子 '{codon}' 的逆替换")
+            raise ValueError(f"Cannot find inverse substitution for codon '{codon}'")
         original_codon_sequence.append(inverse_matrix[codon])
     
     return original_codon_sequence
 
-# 修改 decode_codons_to_plaintext 函数
+# Modified decode_codons_to_plaintext function
 def decode_codons_to_plaintext(codon_sequence):
-    """将密码子序列解码回明文字符串"""
+    """Decodes a codon sequence back to a plaintext string."""
     try:
-        # 将密码子序列合并为字符串
+        # Combine codon sequence into a string
         codon_str = ''.join(codon_sequence)
         
-        # 确保密码子长度是3的倍数
+        # Ensure codon string length is a multiple of 3
         if len(codon_str) % 3 != 0:
             padding_length = 3 - (len(codon_str) % 3)
             codon_str = codon_str + 'N' * padding_length
         
-        # 拆分为密码子列表
+        # Split into a list of codons
         codons_list = [codon_str[i:i+3] for i in range(0, len(codon_str), 3)]
         
-        # 将密码子转换为索引
+        # Convert codons to indices
         codon_indices = []
         for codon in codons_list:
             try:
                 idx = np.where(codons == codon)[0][0]
                 codon_indices.append(idx)
             except IndexError:
-                print(f"警告: 跳过无效密码子 '{codon}'")
+                print(f"Warning: Skipping invalid codon '{codon}'")
                 continue
         
-        # 转换为Base64字符
+        # Convert to Base64 characters
         base64_str = ''.join(base64_chars[idx % 64] for idx in codon_indices)
         
-        # 添加Base64填充
+        # Add Base64 padding
         padding_length = -len(base64_str) % 4
         base64_padded = base64_str + '=' * padding_length
         
-        # 解码Base64
+        # Decode Base64
         try:
             plaintext_bytes = base64.b64decode(base64_padded)
             return plaintext_bytes.decode('utf-8')
         except Exception as e:
-            print(f"Base64解码失败，尝试其他方法: {str(e)}")
-            # 尝试直接解码
+            print(f"Base64 decoding failed, trying other methods: {str(e)}")
+            # Try direct decoding
             return base64_str
             
     except Exception as e:
-        print(f"解码过程出错: {str(e)}")
+        print(f"Decoding process error: {str(e)}")
         raise
 
-# 然后是 decrypt 函数
+# Then is decrypt function
 def decrypt(encrypted_data_with_checksum, seed, seed_sequence, salt, substitution_matrix, indices_order):
     encrypted_data = verify_and_remove_checksum(encrypted_data_with_checksum)
     dynamic_key = generate_dynamic_key_from_biological_data(seed_sequence, salt)
@@ -283,7 +282,7 @@ def decrypt(encrypted_data_with_checksum, seed, seed_sequence, salt, substitutio
     plaintext = decode_codons_to_plaintext(original_codon_sequence)
     return plaintext
 
-# 校验和验证
+# Checksum verification
 def verify_and_remove_checksum(encrypted_data_with_checksum):
     encrypted_data = encrypted_data_with_checksum[:-32]
     checksum = encrypted_data_with_checksum[-32:]
@@ -292,43 +291,43 @@ def verify_and_remove_checksum(encrypted_data_with_checksum):
         raise ValueError("Checksum does not match. Data may be corrupted.")
     return encrypted_data
 
-# AES解密替换为流密码解密
+# AES decryption replaced with stream cipher decryption
 def cha_decrypt(encrypted_data, key):
-    """使用 ChaCha20 解密数据
-    
+    """Decrypts data using ChaCha20.
+
     Args:
-        encrypted_data: 加密的数据（包含nonce）
-        key: 解密密钥
+        encrypted_data: Encrypted data (including nonce).
+        key: Decryption key.
     Returns:
-        list: 解密后的密码子序列
+        list: Decrypted codon sequence.
     """
     try:
-        nonce = encrypted_data[:8]  # ChaCha20 的 nonce 是 8 字节
+        nonce = encrypted_data[:8]  # ChaCha20 nonce is 8 bytes
         ciphertext = encrypted_data[8:]
         cipher = ChaCha20.new(key=key, nonce=nonce)
         decrypted_data = cipher.decrypt(ciphertext)
         
-        # 尝试多种编码方式解码
+        # Try decoding with multiple encodings
         for encoding in ['utf-8', 'latin1', 'ascii']:
             try:
                 data_str = decrypted_data.decode(encoding)
-                # 验证解码后的数据是否符合密码子格式
+                # Validate if decoded data matches codon format
                 if len(data_str) % 3 == 0 and all(c in 'ACGU' for c in data_str):
                     codon_sequence = [data_str[i:i+3] for i in range(0, len(data_str), 3)]
                     return codon_sequence
             except UnicodeDecodeError:
                 continue
         
-        # 如果所有编码都失败，使用二进制方式处理
+        # If all encodings fail, process as binary
         data_str = ''.join(chr(b) for b in decrypted_data)
         codon_sequence = [data_str[i:i+3] for i in range(0, len(data_str), 3)]
         return codon_sequence
         
     except Exception as e:
-        print(f"解密过程出错: {str(e)}")
+        print(f"Decryption process error: {str(e)}")
         raise
 
-# 计算熵
+# Calculate entropy
 def calculate_entropy(data):
     byte_data = data
     if isinstance(data, str):
@@ -342,7 +341,7 @@ def calculate_entropy(data):
     entropy = -np.sum(probabilities * np.log2(probabilities))
     return entropy
 
-# 绘制熵直方图
+# Plot entropy histogram
 def plot_entropy_histogram(data):
     byte_data = data
     if isinstance(data, str):
@@ -356,7 +355,7 @@ def plot_entropy_histogram(data):
     plt.title('Byte Frequency Distribution of Encrypted Data')
     plt.show()
 
-# 性能测试函数
+# Performance testing function
 def test_performance():
     plaintext_lengths = [50, 100, 200, 400, 800, 1600]
     encryption_times = []
@@ -390,13 +389,13 @@ def test_performance():
     plt.show()
 
 def test_comparison():
-    """比较ncRNA、AES和RSA的性能"""
+    """Compare performance of ncRNA, AES, and RSA"""
     plaintext_lengths = [50, 100, 200, 400, 800, 1600]
     ncrna_times = []
     aes_times = []
     rsa_times = []
     
-    # 初始化密钥
+    # Initialize keys
     seed = "123456789"
     seed_sequence = "ACGUACGUACGUACGUACGUACGUACGUACGU"
     salt = b'salt_123'
@@ -417,8 +416,8 @@ def test_comparison():
     
     def test_rsa(plaintext):
         start_time = time.time()
-        # RSA次只能加密有限长度的数据，需要分块处理
-        block_size = 190  # RSA-2048的最大加密块大小
+        # RSA can only encrypt data of limited length at a time, needs to be processed in chunks
+        block_size = 190  # Max encryption block size for RSA-2048
         blocks = [plaintext[i:i+block_size].encode() for i in range(0, len(plaintext), block_size)]
         for block in blocks:
             rsa_cipher.encrypt(block)
@@ -430,7 +429,7 @@ def test_comparison():
         aes_times.append(test_aes(test_text))
         rsa_times.append(test_rsa(test_text))
 
-    # 绘制性能对比图
+    # Plot performance comparison graph
     plt.figure(figsize=(10, 6))
     plt.plot(plaintext_lengths, ncrna_times, 'o-', label='ncRNA')
     plt.plot(plaintext_lengths, aes_times, 's-', label='AES')
@@ -442,45 +441,44 @@ def test_comparison():
     plt.grid(True)
     plt.show()
 
-    # 打印详细结果
-    print("\n性能对比结果:")
-    print("明文长度\tncRNA(s)\tAES(s)\t\tRSA(s)")
+    # Print detailed results
+    print("\nPerformance Comparison Results:")
+    print("Plaintext Length\tncRNA(s)\tAES(s)\t\tRSA(s)")
     print("-" * 50)
     for i, length in enumerate(plaintext_lengths):
         print(f"{length}\t\t{ncrna_times[i]:.6f}\t{aes_times[i]:.6f}\t{rsa_times[i]:.6f}")
 
-# 新增的函数：处理数据块的填充和准备
+# New function: Prepare and pad data chunks
 def prepare_data_chunk(chunk):
-    """准备数据块进行加密
-    
+    """Prepares a data chunk for encryption.
+
     Args:
-        chunk: 密码子列表
+        chunk: List of codons.
     Returns:
-        bytes: 准备好的数据块
+        bytes: Prepared data chunk.
     """
-    # 将密码子列表连成字符串
+    # Join codon list into a string
     chunk_str = ''.join(chunk)
-    # 将字符串编码为字节并填充
+    # Encode string to bytes and pad
     return pad(chunk_str.encode(), AES.block_size)
 
-# 将此函数移到文件前面，放在其他核心函数定义之后，encrypt函数之前
 def encode_plaintext_to_codons(plaintext):
-    """将明文编码为密码子序列
-    
+    """Encodes plaintext into a codon sequence.
+
     Args:
-        plaintext: 要编码的明文字符串
+        plaintext: Plaintext string to encode.
     Returns:
-        list: 密码子序列
+        list: Codon sequence.
     """
-    # 将明文转换为base64
+    # Convert plaintext to base64
     plaintext_bytes = plaintext.encode('utf-8')
     base64_bytes = base64.b64encode(plaintext_bytes)
     base64_str = base64_bytes.decode('ascii').rstrip('=')
     
-    # 创建base64字符到索引的映射
+    # Create a mapping from base64 characters to indices
     char_to_index = {char: idx for idx, char in enumerate(base64_chars)}
     
-    # 将base64字符转换为密码子
+    # Convert base64 characters to codons
     codon_sequence = []
     for char in base64_str:
         try:
@@ -492,44 +490,43 @@ def encode_plaintext_to_codons(plaintext):
     
     return codon_sequence
 
-# 修改后的 encrypt 函数
 def encrypt(plaintext, seed, seed_sequence, salt):
     try:
-        # 1. 编码明文到密码子
+        # 1. Encode plaintext to codons
         codon_sequence = encode_plaintext_to_codons(plaintext)
         
-        # 2. 生成替换矩阵
+        # 2. Generate substitution matrix
         substitution_matrix = generate_codon_substitution_matrix(seed)
         
-        # 3. 替换密码子
+        # 3. Substitute codons
         substituted_sequence = substitute_codons(codon_sequence, substitution_matrix)
         
-        # 4. 应用 RNA 二级结构
+        # 4. Apply RNA secondary structure
         structured_sequence, indices_order = apply_rna_secondary_structure(substituted_sequence)
         
-        # 5. 生成动态密钥
+        # 5. Generate dynamic key
         dynamic_key = generate_dynamic_key_from_biological_data(seed_sequence, salt)
         
-        # 6. 准备加密数据
+        # 6. Prepare data for encryption
         data_to_encrypt = ''.join(structured_sequence)
         
-        # 7. 使用 ChaCha20 加密
+        # 7. Encrypt using ChaCha20
         encrypted_data = cha_encrypt(data_to_encrypt, dynamic_key)
         
-        # 8. 添加校验和
+        # 8. Add checksum
         encrypted_data_with_checksum = add_checksum(encrypted_data)
         
         return encrypted_data_with_checksum, substitution_matrix, indices_order
         
     except Exception as e:
-        print(f"加密过程出错: {str(e)}")
+        print(f"Encryption process error: {str(e)}")
         raise
 
-# 测试代码
+# Test code
 if __name__ == "__main__":
-    DEBUG = False  # 设置为 True 时才输出调试信息
+    DEBUG = False  # Set to True to output debug information
     
-    # 基本加密测试
+    # Basic encryption test
     num_threads = multiprocessing.cpu_count()
     plaintext = "Hello, World! This is a test of the encryption algorithm based on ncRNA."
     seed = "123456789"
@@ -542,47 +539,47 @@ if __name__ == "__main__":
             plaintext, seed, seed_sequence, salt
         )
         encryption_time = time.time() - start_time
-        print(f"加密完成，耗时 {encryption_time:.6f} 秒")
+        print(f"Encryption completed in {encryption_time:.6f} seconds")
         encrypted_data = encrypted_data_with_checksum[:-32]
         entropy = calculate_entropy(encrypted_data)
-        print(f"加密数据的熵: {entropy:.4f} bits/byte")
+        print(f"Entropy of encrypted data: {entropy:.4f} bits/byte")
         plot_entropy_histogram(encrypted_data)
 
-    # 运行性能测试
-    print("\n=== 开始性能测试 ===")
-    print("1. ncRNA加密/解密性能测试")
+    # Run performance tests
+    print("\n=== Starting Performance Tests ===")
+    print("1. ncRNA Encryption/Decryption Performance Test")
     test_performance()
     
-    print("\n2. ncRNA、AES和RSA性能对比测试")
+    print("\n2. ncRNA, AES, and RSA Performance Comparison Test")
     test_comparison()
 
 def chunked_encryption(plaintext, chunk_size=400):
     chunks = [plaintext[i:i+chunk_size] for i in range(0, len(plaintext), chunk_size)]
     encrypted_chunks = []
     for chunk in chunks:
-        # 处理每个较小的块
-        encrypted_chunk = encrypt_chunk(chunk)
+        # Process each smaller chunk
+        encrypted_chunk = encrypt_chunk(chunk) # encrypt_chunk is not defined
         encrypted_chunks.append(encrypted_chunk)
-    return combine_chunks(encrypted_chunks)
+    return combine_chunks(encrypted_chunks) # combine_chunks is not defined
 
 def optimized_nussinov(sequence):
-    # 使用稀疏动态规划
-    # 只存储可能配对的位置
+    # Use sparse dynamic programming
+    # Store only possible pairing positions
     pairs = {}
     for i in range(len(sequence)):
-        for j in range(i + 4, len(sequence)):  # 最小环尺寸为4
+        for j in range(i + 4, len(sequence)):  # Minimum loop size is 4
             if can_pair(sequence[i], sequence[j]):
                 pairs[(i,j)] = True
-    # 只在可能配对的位置进行计算
+    # Compute only at possible pairing positions
 
-# 分块处理大文件
+# Process large files in chunks
 def process_large_file(plaintext, chunk_size=1024):
-    """分块处理大文件以减少内存使用"""
+    """Processes large files in chunks to reduce memory usage."""
     chunks = (plaintext[i:i+chunk_size] for i in range(0, len(plaintext), chunk_size))
     results = []
     
     for chunk in chunks:
-        encrypted_chunk = encrypt(chunk, seed, seed_sequence, salt)
+        encrypted_chunk = encrypt(chunk, seed, seed_sequence, salt) # seed, seed_sequence, salt are not defined in this scope
         results.append(encrypted_chunk)
         
     return combine_results(results)
